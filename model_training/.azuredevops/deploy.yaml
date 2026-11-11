@@ -1,0 +1,79 @@
+name: "Deploy Pipeline"
+
+parameters:
+- name: level1
+  displayName: 'Deploy to Production Level 1 Environment'
+  type: boolean
+  default: false
+
+- name: level2
+  displayName: 'Deploy to Production Level 2 Environment'
+  type: boolean
+  default: false
+
+- name: level3
+  displayName: 'Deploy to Production Level 3 Environment'
+  type: boolean
+  default: false
+
+trigger:
+  - main
+
+pool:
+  name: DATA-PROD
+
+# stage logic and conditions all very basic until process and automation is decided with DS team
+stages:
+  - ${{ if eq(parameters.level1, true) }}:
+    - stage: level1
+      displayName: "Deploy to LEVEL1 Environment"
+      jobs:
+        - job: RunPythonScript
+          displayName: "Run Python Script via Azure CLI Task"
+          steps:
+            - task: AzureCLI@2
+              displayName: "Execute run_all_scripts.py"
+              inputs:
+                azureSubscription: 'NHG Data PROD (Data Science L1-2)'
+                scriptType: batch
+                scriptLocation: inlineScript
+                inlineScript: |
+                  echo "Running the Python automation script..."
+                  pip install -r root_folder/requirements.txt || exit /b 1
+                  python root_folder/pipeline_folder/src/run_all_scripts.py --env level1 || exit /b 1
+  
+  - ${{ if eq(parameters.level2, true) }}:
+    - stage: level2
+      displayName: "Deploy to LEVEL2 Environment"
+      jobs:
+        - job: RunPythonScript
+          displayName: "Run Python Script via Azure CLI Task"
+          timeoutInMinutes: 0
+          steps:
+            - task: AzureCLI@2
+              displayName: "Execute run_all_scripts.py"
+              inputs:
+                azureSubscription: 'NHG Data PROD (Data Science L1-2)'
+                scriptType: batch
+                scriptLocation: inlineScript
+                inlineScript: |
+                  echo "Running the Python automation script..."
+                  python root_folder/pipeline_folder/src/run_all_scripts.py --env level2
+
+  - ${{ if eq(parameters.level3, true) }}:
+    - stage: level3
+      displayName: "Deploy to LEVEL3 Environment"
+      # condition: eq(variables['Build.SourceBranch'], 'refs/heads/master')
+      jobs:
+        - job: RunPythonScript
+          displayName: "Run Python Script via Azure CLI Task"
+          steps:
+            - task: AzureCLI@2
+              displayName: "Execute run_all_scripts.py"
+              inputs:
+                azureSubscription: 'NHG Data PROD (Data Science L3)'
+                scriptType: batch
+                scriptLocation: inlineScript
+                inlineScript: |
+                  echo "Running the Python automation script..."
+                  python root_folder/pipeline_folder/src/run_all_scripts.py --env level3

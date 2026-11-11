@@ -1,0 +1,21 @@
+datastore:
+  datastore_name: "datastore"
+  container_name: "main"
+  data_asset_name: "credit_default_dataset"
+  data_asset_path: "credit_default/input_data"
+
+environment:
+  env_name: "credit_default_env"
+  conda_file_path: "./dependencies/conda.yaml"
+  description: "dependencies for the credit default environment"
+
+pipeline:
+  project_folder: "credit_default"
+  description: "credit default pipeline"
+  experiment_name: "credit_default_experiment"
+  schedule_name: "credit_default_schedule"
+  cron_expression: "0 2 1 * *"  # format: "minute hour day month day_of_week", e.g. "0 2 1 * *" = 02:00 on the 1st of every month
+  test_train_ratio: 0.25
+  learning_rate: 0.05
+  registered_model_name: "credit_defaults_model"
+  

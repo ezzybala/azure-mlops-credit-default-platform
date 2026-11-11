@@ -1,0 +1,52 @@
+apiVersion: apps/v1
+kind: Deployment
+
+metadata:
+  name: credit-default-api
+  namespace: credit-default
+
+spec:
+  replicas: 2
+
+  selector:
+    matchLabels:
+      app: credit-default-api
+
+  template:
+    metadata:
+      labels:
+        app: credit-default-api
+        azure.workload.identity/use: "true"
+
+    spec:
+      serviceAccountName: credit-default-sa
+      containers:
+      - name: credit-default-api
+        image: creditdefaultacrdev.azurecr.io/credit-default-api:IMAGE_TAG
+        imagePullPolicy: Always
+        ports:
+        - containerPort: 8000
+        envFrom:
+        - configMapRef:
+            name: credit-default-config
+        - secretRef:
+            name: credit-default-secret
+        # resources:
+        #   requests:
+        #     cpu: "250m"
+        #     memory: "256Mi"
+        #   limits:
+        #     cpu: "500m"
+        #     memory: "512Mi"
+        # livenessProbe:
+        #   httpGet:
+        #     path: /health/live
+        #     port: 8000
+        #   initialDelaySeconds: 120
+        #   periodSeconds: 60
+        # readinessProbe:
+        #   httpGet:
+        #     path: /health/ready
+        #     port: 8000
+        #   initialDelaySeconds: 120
+        #   periodSeconds: 60

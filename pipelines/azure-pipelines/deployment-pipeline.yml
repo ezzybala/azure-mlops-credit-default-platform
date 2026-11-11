@@ -1,0 +1,97 @@
+trigger:
+  branches:
+    include:
+      - main
+
+  paths:
+    include:
+      - serving/*
+      - kubernetes/*
+pool:
+  vmImage: ubuntu-latest
+
+variables:
+- group: infrastructure-dev
+- name: imageRepository
+  value: 'credit-default-api'
+- name: imageTag
+  value: '$(Build.BuildId)'
+- name: namespace
+  value: 'credit-default'
+
+stages:
+
+- stage: BuildAndPush
+  displayName: Build and Push Docker Image
+
+  jobs:
+  - job: BuildAndPush
+
+    steps:
+  
+    - task: AzureCLI@2
+      inputs:
+        azureSubscription: $(serviceConnection)
+        scriptType: bash
+        scriptLocation: inlineScript
+
+        inlineScript: |
+
+          az acr login \
+            --name $(acrName)
+
+          docker build \
+            -t $(imageRepository):$(imageTag) \
+            -f serving/Dockerfile \
+            serving
+
+          docker tag \
+            $(imageRepository):$(imageTag) \
+            $(acrName).azurecr.io/$(imageRepository):$(imageTag)
+
+          docker push \
+            $(acrName).azurecr.io/$(imageRepository):$(imageTag)
+
+- stage: Deploy
+
+  dependsOn: BuildAndPush
+
+  jobs:
+  - job: Deploy
+
+    steps:
+    - task: Bash@3
+      inputs:
+        targetType: inline
+        script: |
+          sed -i "s/IMAGE_TAG/$(imageTag)/g" kubernetes/deployment.yaml
+          cat kubernetes/deployment.yaml
+
+    - task: AzureCLI@2
+      displayName: Deploy To AKS
+
+      inputs:
+        azureSubscription: $(serviceConnection)
+        scriptType: bash
+        scriptLocation: inlineScript
+
+        inlineScript: |
+
+          set -e
+
+          az aks get-credentials \
+            --resource-group $(resourceGroupName) \
+            --name $(aksClusterName) \
+            --overwrite-existing
+            
+          helm upgrade --install credit-default \
+            ./helm/credit-default \
+            --namespace $(namespace) \
+            --create-namespace \
+            --set image.tag=$(imageTag) \
+            --set namespace=$(namespace)
+          
+          kubectl rollout status \
+            deployment/credit-default-api \
+            -n $(namespace) \
+            --timeout=300s

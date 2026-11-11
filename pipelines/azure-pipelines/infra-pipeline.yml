@@ -1,0 +1,167 @@
+# trigger:
+#   branches:
+#     include:
+#       - main
+
+#   paths:
+#     include:
+#       - azure-pipelines/infra/*
+
+# pool:
+#   vmImage: "Azure Pipelines 1"
+
+# variables:
+#   azureServiceConnection: 'azure-playground-sc'
+#   resourceGroupName: 'playgroundRG'
+#   # location: 'eastus'
+
+#   # acrName: 'creditdefaultacrdev'
+#   # aksName: 'credit-default-aks-dev'
+
+# stages:
+
+# - stage: Validate
+#   displayName: Validate Infrastructure
+
+#   jobs:
+#   - job: ValidateBicep
+
+#     steps:
+#     - task: AzureCLI@2
+#       displayName: Validate Bicep Template
+#       inputs:
+#         azureSubscription: $(azureServiceConnection)
+#         scriptType: bash
+#         scriptLocation: inlineScript
+#         inlineScript: |
+
+#           az bicep build \
+#             --file infra/main.bicep
+
+#           echo "Bicep validation completed"
+
+
+trigger:
+- main
+
+
+pool:
+  vmImage: ubuntu-latest
+
+variables:
+- group: infrastructure-dev
+
+stages:
+
+- stage: ValidateConnection
+  displayName: Validate Azure Connection
+  jobs:
+    - job: ValidateConnection
+      steps:
+      - task: AzureCLI@2
+        inputs:
+          azureSubscription: $(serviceConnection)
+          scriptType: bash
+          scriptLocation: inlineScript
+
+          inlineScript: |
+
+            echo "Connected to Azure"
+            az account show
+            echo "Azure connection validated"
+  
+- stage: ValidateBicep
+  displayName: Validate Bicep Template
+  jobs:
+    - job: ValidateBicep
+      steps:
+      - task: AzureCLI@2
+        inputs:
+          azureSubscription: $(serviceConnection)
+          scriptType: bash
+          scriptLocation: inlineScript
+
+          inlineScript: |
+
+            az bicep build \
+              --file infra/main.bicep
+
+            echo "Bicep validation completed"
+
+- stage: WhatIf
+  dependsOn: ValidateBicep
+
+  jobs:
+    - job: WhatIf
+
+      steps:
+
+      - task: AzureCLI@2
+        displayName: Run What If
+        inputs:
+          azureSubscription: $(serviceConnection)
+          scriptType: bash
+          scriptLocation: inlineScript
+
+          inlineScript: |
+
+            az deployment group what-if \
+              --resource-group $(resourceGroupName) \
+              --parameters infra/params/dev.bicepparam \
+              --template-file infra/main.bicep
+
+# ==========================
+# Deploy
+# ==========================
+- stage: Deploy
+  displayName: Deploy Infrastructure
+
+  dependsOn: WhatIf
+
+  jobs:
+  - job: Deploy
+
+    steps:
+
+    - task: AzureCLI@2
+      displayName: Deploy Infrastructure
+
+      inputs:
+        azureSubscription: $(serviceConnection)
+        scriptType: bash
+        scriptLocation: inlineScript
+
+        inlineScript: |
+
+          set -e
+
+          az deployment group create \
+            --name infra-$(Build.BuildId) \
+            --resource-group $(resourceGroupName) \
+            --template-file infra/main.bicep \
+            --parameters infra/params/dev.bicepparam
+    
+    - task: AzureCLI@2
+      displayName: Install NGINX Ingress
+
+      inputs:
+        azureSubscription: $(serviceConnection)
+        scriptType: bash
+        scriptLocation: inlineScript
+
+        inlineScript: |
+
+          az aks get-credentials \
+            --resource-group $(resourceGroupName) \
+            --name $(aksClusterName) \
+            --overwrite-existing
+
+          helm repo add ingress-nginx \
+            https://kubernetes.github.io/ingress-nginx
+
+          helm repo update
+
+          helm upgrade --install ingress-nginx \
+            ingress-nginx/ingress-nginx \
+            --namespace ingress-nginx \
+            --create-namespace

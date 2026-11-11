@@ -1,0 +1,12 @@
+apiVersion: v1
+kind: ConfigMap
+
+metadata:
+  name: credit-default-config
+  namespace: {{ .Release.Namespace }}
+
+data:
+  AML_SUBSCRIPTION_ID: "{{ .Values.aml.subscriptionId }}"
+  AML_RESOURCE_GROUP: "{{ .Values.aml.resourceGroup }}"
+  AML_WORKSPACE_NAME: "{{ .Values.aml.workspaceName }}"
+  MODEL_NAME: "{{ .Values.aml.modelName }}"

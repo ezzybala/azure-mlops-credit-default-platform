@@ -1,0 +1,13 @@
+apiVersion: v1
+kind: ConfigMap
+
+metadata:
+  name: credit-default-config
+  namespace: credit-default
+  
+data:
+  AML_SUBSCRIPTION_ID: "294f250d-362d-44a4-9904-554808c8700b"
+  AML_RESOURCE_GROUP: "playgroundRG"
+  AML_WORKSPACE_NAME: "playground-ml-workspace"
+
+  MODEL_NAME: "credit_defaults_model"

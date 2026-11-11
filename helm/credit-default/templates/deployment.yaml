@@ -1,0 +1,39 @@
+apiVersion: apps/v1
+kind: Deployment
+
+metadata:
+  name: credit-default-api
+  namespace: {{ .Release.Namespace }}
+
+spec:
+  replicas: {{ .Values.replicaCount }}
+
+  selector:
+    matchLabels:
+      app: credit-default-api
+
+  template:
+    metadata:
+      labels:
+        app: credit-default-api
+        azure.workload.identity/use: "true"
+
+    spec:
+      serviceAccountName: credit-default-sa
+
+      containers:
+      - name: credit-default-api
+
+        image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+
+        imagePullPolicy: {{ .Values.image.pullPolicy }}
+
+        ports:
+        - containerPort: 8000
+
+        envFrom:
+        - configMapRef:
+            name: credit-default-config
+
+        - secretRef:
+            name: credit-default-secret

@@ -1,0 +1,19 @@
+artifact_path: credit_defaults_model
+flavors:
+  python_function:
+    env:
+      conda: conda.yaml
+      virtualenv: python_env.yaml
+    loader_module: mlflow.sklearn
+    model_path: model.pkl
+    predict_fn: predict
+    python_version: 3.8.20
+  sklearn:
+    code: null
+    pickled_model: model.pkl
+    serialization_format: cloudpickle
+    sklearn_version: 0.24.2
+mlflow_version: 2.4.1
+model_uuid: e19a21793bdc4a74927818e03bf7df5e
+run_id: 322d1a9d-b8c3-4ec9-b354-560cc3778553
+utc_time_created: '2026-10-28 02:43:20.016887'

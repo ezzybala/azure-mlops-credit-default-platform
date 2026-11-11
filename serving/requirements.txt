@@ -1,0 +1,15 @@
+fastapi
+uvicorn
+pandas
+numpy
+mlflow==2.4
+cloudpickle==2.2.1
+scikit-learn==0.24.2
+azure-identity
+azure-ai-ml
+opentelemetry-api
+opentelemetry-sdk
+azure-monitor-opentelemetry
+opentelemetry-instrumentation-fastapi
+opentelemetry-instrumentation-asgi
+opentelemetry-instrumentation-logging

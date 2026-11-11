@@ -1,0 +1,27 @@
+replicaCount: 2
+
+image:
+  repository: creditdefaultacrdev.azurecr.io/credit-default-api
+  tag: "latest"
+  pullPolicy: Always
+
+service:
+  type: ClusterIP
+  port: 80
+  targetPort: 8000
+
+ingress:
+  enabled: true
+  className: nginx
+
+managedIdentity:
+  clientId: d7bce57f-d3b4-4f5e-959c-b0a28ab3e41b
+
+aml:
+  subscriptionId: 294f250d-362d-44a4-9904-554808c8700b
+  resourceGroup: playgroundRG
+  workspaceName: playground-ml-workspace
+  modelName: credit_defaults_model
+
+applicationInsights:
+  ConnectionString: "InstrumentationKey=40161c5f-5433-4749-9e82-0a58742b7e93;IngestionEndpoint=https://eastus-8.in.applicationinsights.azure.com/;LiveEndpoint=https://eastus.livediagnostics.monitor.azure.com/;ApplicationId=9529ce6e-85ea-4962-ae9f-8b68a0eb7b2f"
